@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICEA-Chat Messenger</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+        .status-dot-online { background-color: #10b981; }
+        .status-dot-away { background-color: #eab308; }
+        .status-dot-busy { background-color: #ef4444; }
+        .status-dot-offline { background-color: #6b7280; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+
+    <script>
+        const mockUser = {
+            name: 'Felipe Fialho',
+            username: 'felipe@icea.chat',
+            status: 'Disponível',
+            bio: 'Desenvolvedor Full Stack | CSI606-2025-01',
+            personalMessage: 'Desenvolvendo o trabalho final 🚀'
+        };
+
+        const mockFriends = [
+            { id: 1, name: 'Ana Silva', username: 'ana@icea.chat', status: 'online', message: 'Estudando para a prova', lastSeen: 'Agora' },
+            { id: 2, name: 'Bruno Costa', username: 'bruno@icea.chat', status: 'online', message: 'Disponível', lastSeen: 'Agora' },
+            { id: 3, name: 'Carla Mendes', username: 'carla@icea.chat', status: 'offline', message: '', lastSeen: '2 horas atrás' },
+            { id: 4, name: 'Diego Santos', username: 'diego@icea.chat', status: 'busy', message: 'Não perturbe - focado', lastSeen: 'Agora' },
+            { id: 5, name: 'Elena Rodrigues', username: 'elena@icea.chat', status: 'online', message: 'Disponível para conversar', lastSeen: 'Agora' }
+        ];
+
+        const mockGroups = [
+            { id: 1, name: 'CSI606 - Turma 2025', members: 24, unread: 3 },
+            { id: 2, name: 'Projeto Final', members: 5, unread: 0 },
+            { id: 3, name: 'Random Chat', members: 156, unread: 12 },
+            { id: 4, name: 'Estudos de Programação', members: 45, unread: 0 }
+        ];
+
+        const mockMessages = [
+            { id: 1, sender: 'Ana Silva', content: 'Oi! Tudo bem?', time: '14:32', own: false },
+            { id: 2, sender: 'Você', content: 'Tudo ótimo! E você?', time: '14:33', own: true },
+            { id: 3, sender: 'Ana Silva', content: 'Também! Viu o trabalho de hoje?', time: '14:34', own: false },
+            { id: 4, sender: 'Você', content: 'Vi sim! Parece interessante', time: '14:35', own: true },
+            { id: 5, sender: 'Ana Silva', content: 'Vamos fazer juntos?', time: '14:36', own: false }
+        ];
+
+        let currentScreen = 'login';
+        let sidebarTab = 'friends';
+        let selectedChat = null;
+
+        function getInitials(name) {
+            return name.split(' ').map(n => n[0]).join('');
+        }
+
+        function renderLoginScreen() {
+            return `
+                <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900">
+                    <div class="bg-white rounded-lg shadow-2xl w-96 overflow-hidden">
+                        <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-center">
+                            <div class="inline-block p-3 bg-white rounded-full mb-3">
+                                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                </svg>
+                            </div>
+                            <h1 class="text-3xl font-bold text-white">ICEA-Chat</h1>
+                            <p class="text-blue-100 text-sm mt-1">Messenger</p>
+                        </div>
+                        
+                        <div class="p-8">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-sm text-gray-600 mb-1 block">E-mail:</label>
+                                    <input type="text" placeholder="usuario@icea.chat" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label class="text-sm text-gray-600 mb-1 block">Senha:</label>
+                                    <input type="password" placeholder="••••••••" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="remember" class="mr-2">
+                                    <label for="remember" class="text-sm text-gray-600">Lembrar de mim</label>
+                                </div>
+                                <button onclick="navigateTo('main')" class="w-full py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded font-semibold hover:from-blue-600 hover:to-blue-700 transition-all">
+                                    Entrar
+                                </button>
+                            </div>
+
+                            <div class="mt-6 text-center border-t pt-4">
+                                <button onclick="navigateTo('register')" class="text-blue-600 hover:text-blue-700 text-sm font-semibold">
+                                    Criar uma nova conta
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderRegisterScreen() {
+            return `
+                <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900">
+                    <div class="bg-white rounded-lg shadow-2xl w-96 overflow-hidden">
+                        <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-4 text-center">
+                            <h1 class="text-2xl font-bold text-white">Criar Conta</h1>
+                            <p class="text-blue-100 text-sm">ICEA-Chat Messenger</p>
+                        </div>
+                        
+                        <div class="p-8">
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="text-sm text-gray-600 mb-1 block">Nome completo:</label>
+                                    <input type="text" placeholder="Seu nome" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label class="text-sm text-gray-600 mb-1 block">E-mail:</label>
+                                    <input type="email" placeholder="usuario@icea.chat" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label class="text-sm text-gray-600 mb-1 block">Senha:</label>
+                                    <input type="password" placeholder="••••••••" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label class="text-sm text-gray-600 mb-1 block">Confirmar senha:</label>
+                                    <input type="password" placeholder="••••••••" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <button onclick="navigateTo('main')" class="w-full py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded font-semibold hover:from-blue-600 hover:to-blue-700 transition-all mt-2">
+                                    Cadastrar
+                                </button>
+                            </div>
+
+                            <div class="mt-4 text-center border-t pt-4">
+                                <button onclick="navigateTo('login')" class="text-blue-600 hover:text-blue-700 text-sm">
+                                    Já tem uma conta? <span class="font-semibold">Entrar</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderMainScreen() {
+            const onlineFriends = mockFriends.filter(f => f.status === 'online');
+            const offlineFriends = mockFriends.filter(f => f.status === 'offline');
+            
+            return `
+                <div class="h-screen flex flex-col bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900">
+                    <div class="bg-gradient-to-r from-blue-500 to-blue-700 px-3 py-1 flex items-center justify-between">
+                        <div class="flex items-center gap-2 text-white text-sm font-semibold">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                            </svg>
+                            ICEA-Chat Messenger
+                        </div>
+                        <div class="flex gap-1">
+                            <button class="w-6 h-6 bg-blue-600 hover:bg-blue-500 rounded flex items-center justify-center text-white text-xs">_</button>
+                            <button class="w-6 h-6 bg-blue-600 hover:bg-blue-500 rounded flex items-center justify-center text-white text-xs">□</button>
+                            <button onclick="navigateTo('login')" class="w-6 h-6 bg-red-600 hover:bg-red-500 rounded flex items-center justify-center text-white text-xs">×</button>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 flex overflow-hidden">
+                        <div class="w-72 bg-white border-r border-gray-200 flex flex-col">
+                            <div class="p-4 border-b border-gray-200">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div class="relative">
+                                        <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded flex items-center justify-center text-white font-bold text-lg">
+                                            FF
+                                        </div>
+                                        <div class="absolute bottom-0 right-0 w-3 h-3 status-dot-online border-2 border-white rounded-full"></div>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="font-semibold text-gray-800 truncate">${mockUser.name}</h3>
+                                        <p class="text-xs text-gray-500 truncate">${mockUser.personalMessage}</p>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <select class="flex-1 text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option>Disponível</option>
+                                        <option>Ausente</option>
+                                        <option>Ocupado</option>
+                                        <option>Aparecer offline</option>
+                                    </select>
+                                    <button onclick="navigateTo('profile')" class="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded">
+                                        <svg class="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="flex border-b border-gray-200">
+                                <button onclick="setSidebarTab('friends')" class="flex-1 py-2 text-sm font-semibold ${sidebarTab === 'friends' ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600' : 'text-gray-600 hover:bg-gray-50'}">
+                                    Contatos (${onlineFriends.length}/${mockFriends.length})
+                                </button>
+                                <button onclick="setSidebarTab('groups')" class="flex-1 py-2 text-sm font-semibold ${sidebarTab === 'groups' ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600' : 'text-gray-600 hover:bg-gray-50'}">
+                                    Grupos (${mockGroups.length})
+                                </button>
+                            </div>
+
+                            <div class="p-3 border-b border-gray-200">
+                                <div class="relative">
+                                    <svg class="absolute left-2 top-2 text-gray-400 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                    <input type="text" placeholder="Buscar contatos..." class="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                            </div>
+
+                            <div class="flex-1 overflow-y-auto scrollbar-hide">
+                                ${sidebarTab === 'friends' ? `
+                                    <div class="px-3 py-2 bg-gray-50 text-xs font-semibold text-gray-600">
+                                        ONLINE (${onlineFriends.length})
+                                    </div>
+                                    ${onlineFriends.map(friend => `
+                                        <button onclick="openChat('${friend.id}', 'friend')" class="w-full px-3 py-2 hover:bg-blue-50 flex items-center gap-2 border-b border-gray-100 text-left">
+                                            <div class="relative">
+                                                <div class="w-8 h-8 bg-gradient-to-br from-purple-400 to-pink-400 rounded flex items-center justify-center text-white text-xs font-bold">
+                                                    ${getInitials(friend.name)}
+                                                </div>
+                                                <div class="absolute bottom-0 right-0 w-2.5 h-2.5 status-dot-${friend.status} border border-white rounded-full"></div>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="text-sm font-semibold text-gray-800 truncate">${friend.name}</div>
+                                                <div class="text-xs text-gray-500 truncate italic">${friend.message || 'Sem mensagem pessoal'}</div>
+                                            </div>
+                                        </button>
+                                    `).join('')}
+                                    
+                                    <div class="px-3 py-2 bg-gray-50 text-xs font-semibold text-gray-600 mt-2">
+                                        OFFLINE (${offlineFriends.length})
+                                    </div>
+                                    ${offlineFriends.map(friend => `
+                                        <button class="w-full px-3 py-2 hover:bg-gray-50 flex items-center gap-2 border-b border-gray-100 text-left opacity-60">
+                                            <div class="relative">
+                                                <div class="w-8 h-8 bg-gray-300 rounded flex items-center justify-center text-white text-xs font-bold">
+                                                    ${getInitials(friend.name)}
+                                                </div>
+                                                <div class="absolute bottom-0 right-0 w-2.5 h-2.5 status-dot-offline border border-white rounded-full"></div>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="text-sm font-semibold text-gray-600 truncate">${friend.name}</div>
+                                                <div class="text-xs text-gray-400 truncate">${friend.lastSeen}</div>
+                                            </div>
+                                        </button>
+                                    `).join('')}
+                                ` : `
+                                    ${mockGroups.map(group => `
+                                        <button onclick="openChat('${group.id}', 'group')" class="w-full px-3 py-2 hover:bg-blue-50 flex items-center gap-2 border-b border-gray-100 text-left">
+                                            <div class="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded flex items-center justify-center text-white text-sm font-bold">
+                                                #
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="text-sm font-semibold text-gray-800 truncate">${group.name}</div>
+                                                <div class="text-xs text-gray-500">${group.members} membros</div>
+                                            </div>
+                                            ${group.unread > 0 ? `
+                                                <div class="px-2 py-0.5 bg-red-500 text-white text-xs rounded-full font-semibold">
+                                                    ${group.unread}
+                                                </div>
+                                            ` : ''}
+                                        </button>
+                                    `).join('')}
+                                `}
+                            </div>
+
+                            <div class="p-3 border-t border-gray-200 flex gap-2">
+                                <button class="flex-1 py-2 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded font-semibold">
+                                    + Adicionar
+                                </button>
+                                <button class="flex-1 py-2 text-xs bg-green-500 hover:bg-green-600 text-white rounded font-semibold">
+                                    + Grupo
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex-1 bg-white flex items-center justify-center">
+                            <div class="text-center text-gray-400">
+                                <svg class="w-16 h-16 mx-auto mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                </svg>
+                                <p class="text-lg font-semibold">Bem-vindo ao ICEA-Chat</p>
+                                <p class="text-sm">Selecione um contato ou grupo para iniciar uma conversa</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderProfileScreen() {
+            return `
+                <div class="h-screen flex flex-col bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900">
+                    <div class="bg-gradient-to-r from-blue-500 to-blue-700 px-3 py-1 flex items-center justify-between">
+                        <div class="flex items-center gap-2 text-white text-sm font-semibold">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                            Editar Perfil
+                        </div>
+                        <button onclick="navigateTo('main')" class="w-6 h-6 bg-red-600 hover:bg-red-500 rounded flex items-center justify-center text-white text-xs">×</button>
+                    </div>
+
+                    <div class="flex-1 flex items-center justify-center p-6 overflow-y-auto">
+                        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl">
+                            <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-4 rounded-t-lg">
+                                <h2 class="text-xl font-bold text-white">Meu Perfil</h2>
+                            </div>
+                            
+                            <div class="p-6">
+                                <div class="flex items-center gap-6 mb-6">
+                                    <div class="relative">
+                                        <div class="w-24 h-24 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white text-3xl font-bold">
+                                            FF
+                                        </div>
+                                        <button class="absolute bottom-0 right-0 w-8 h-8 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center text-white">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h3 class="text-2xl font-bold text-gray-800">${mockUser.name}</h3>
+                                        <p class="text-gray-600">${mockUser.username}</p>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-4 mb-6">
+                                    <div>
+                                        <label class="text-sm text-gray-600 mb-1 block font-semibold">Nome:</label>
+                                        <input type="text" value="${mockUser.name}" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label class="text-sm text-gray-600 mb-1 block font-semibold">E-mail:</label>
+                                        <input type="text" value="${mockUser.username}" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div class="col-span-2">
+                                        <label class="text-sm text-gray-600 mb-1 block font-semibold">Mensagem pessoal:</label>
+                                        <input type="text" value="${mockUser.personalMessage}" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="O que você está fazendo?">
+                                    </div>
+                                    <div class="col-span-2">
+                                        <label class="text-sm text-gray-600 mb-1 block font-semibold">Biografia:</label>
+                                        <textarea rows="3" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">${mockUser.bio}</textarea>
+                                    </div>
+                                </div>
+
+                                <div class="flex gap-3 pt-4 border-t border-gray-200">
+                                    <button onclick="navigateTo('main')" class="flex-1 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded font-semibold">
+                                        Salvar Alterações
+                                    </button>
+                                    <button onclick="navigateTo('main')" class="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded font-semibold">
+                                        Cancelar
+                                    </button>
+                                    <button class="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded font-semibold">
+                                        Excluir Conta
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderChatPrivateScreen() {
+            const friend = mockFriends.find(f => f.id == selectedChat) || mockFriends[0];
+            return `
+                <div class="h-screen flex flex-col bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900">
+                    <div class="bg-gradient-to-r from-blue-500 to-blue-700 px-3 py-1 flex items-center justify-between">
+                        <div class="flex items-center gap-2 text-white text-sm font-semibold">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                            </svg>
+                            Conversa com ${friend.name}
+                        </div>
+                        <div class="flex gap-1">
+                            <button class="w-6 h-6 bg-blue-600 hover:bg-blue-500 rounded flex items-center justify-center text-white text-xs">_</button>
+                            <button onclick="navigateTo('main')" class="w-6 h-6 bg-red-600 hover:bg-red-500 rounded flex items-center justify-center text-white text-xs">×</button>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 flex overflow-hidden">
+                        <div class="flex-1 flex flex-col bg-white">
+                            <div class="px-4 py-3 border-b border-gray-200 flex items-center gap-3 bg-gray-50">
+                                <div class="relative">
+                                    <div class="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold">
+                                        ${getInitials(friend.name)}
+                                    </div>
+                                    <div class="absolute bottom-0 right-0 w-3 h-3 status-dot-${friend.status} border-2 border-white rounded-full"></div>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-800">${friend.name}</h3>
+                                    <p class="text-xs text-gray-500">${friend.status === 'online' ? 'Online' : 'Offline'} - ${friend.message}</p>
+                                </div>
+                            </div>
+
+                            <div class="flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-white to-blue-50 scrollbar-hide">
+                                ${mockMessages.map(msg => `
+                                    <div class="flex ${msg.own ? 'justify-end' : 'justify-start'}">
+                                        <div class="max-w-md ${msg.own ? 'bg-gradient-to-r from-blue-500 to-blue-600' : 'bg-white border border-gray-200'} rounded-lg px-4 py-2 shadow-sm">
+                                            <p class="text-sm ${msg.own ? 'text-white' : 'text-gray-800'}">${msg.content}</p>
+                                            <p class="text-xs mt-1 ${msg.own ? 'text-blue-100' : 'text-gray-400'}">${msg.time}</p>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+
+                            <div class="p-4 border-t border-gray-200 bg-white">
+                                <div class="flex gap-2">
+                                    <input type="text" placeholder="Digite uma mensagem..." class="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <button class="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full hover:from-blue-600 hover:to-blue-700 font-semibold flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                        </svg>
+                                        Enviar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderChatGroupScreen() {
+            const group = mockGroups.find(g => g.id == selectedChat) || mockGroups[0];
+            return `
+                <div class="h-screen flex flex-col bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900">
+                    <div class="bg-gradient-to-r from-blue-500 to-blue-700 px-3 py-1 flex items-center justify-between">
+                        <div class="flex items-center gap-2 text-white text-sm font-semibold">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                            ${group.name}
+                        </div>
+                        <div class="flex gap-1">
+                            <button class="w-6 h-6 bg-blue-600 hover:bg-blue-500 rounded flex items-center justify-center text-white text-xs">_</button>
+                            <button onclick="navigateTo('main')" class="w-6 h-6 bg-red-600 hover:bg-red-500 rounded flex items-center justify-center text-white text-xs">×</button>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 flex overflow-hidden">
+                        <div class="flex-1 flex flex-col bg-white">
+                            <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                                        #
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold text-gray-800">${group.name}</h3>
+                                        <p class="text-xs text-gray-500">${group.members} membros online</p>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button class="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-semibold flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                        </svg>
+                                        Moderar
+                                    </button>
+                                    <button class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-xs font-semibold">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-white to-blue-50 scrollbar-hide">
+                                ${mockMessages.map(msg => `
+                                    <div class="group relative">
+                                        <div class="max-w-md ${msg.own ? 'ml-auto' : ''} ${msg.own ? 'bg-gradient-to-r from-blue-500 to-blue-600' : 'bg-white border border-gray-200'} rounded-lg px-4 py-2 shadow-sm">
+                                            ${!msg.own ? `<p class="text-xs font-bold mb-1 text-blue-600">${msg.sender}</p>` : ''}
+                                            <p class="text-sm ${msg.own ? 'text-white' : 'text-gray-800'}">${msg.content}</p>
+                                            <p class="text-xs mt-1 ${msg.own ? 'text-blue-100' : 'text-gray-400'}">${msg.time}</p>
+                                        </div>
+                                        ${!msg.own ? `
+                                            <button class="absolute -top-1 right-2 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs flex items-center gap-1">
+                                                <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                </svg>
+                                                Apagar
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+
+                            <div class="p-4 border-t border-gray-200 bg-white">
+                                <div class="flex gap-2">
+                                    <input type="text" placeholder="Digite uma mensagem no grupo..." class="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <button class="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full hover:from-blue-600 hover:to-blue-700 font-semibold flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                        </svg>
+                                        Enviar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="w-56 bg-gray-50 border-l border-gray-200">
+                            <div class="p-3 border-b border-gray-200 bg-white">
+                                <h4 class="text-sm font-semibold text-gray-700">Membros (${group.members})</h4>
+                            </div>
+                            <div class="overflow-y-auto scrollbar-hide">
+                                ${mockFriends.slice(0, 10).map(member => `
+                                    <div class="px-3 py-2 hover:bg-gray-100 flex items-center gap-2 border-b border-gray-100">
+                                        <div class="relative">
+                                            <div class="w-7 h-7 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                                ${getInitials(member.name)}
+                                            </div>
+                                            <div class="absolute bottom-0 right-0 w-2 h-2 status-dot-${member.status} border border-white rounded-full"></div>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-xs font-semibold text-gray-800 truncate">${member.name}</div>
+                                            <div class="text-xs text-gray-500 capitalize">${member.status}</div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function navigateTo(screen) {
+            currentScreen = screen;
+            render();
+        }
+
+        function setSidebarTab(tab) {
+            sidebarTab = tab;
+            render();
+        }
+
+        function openChat(id, type) {
+            selectedChat = id;
+            currentScreen = type === 'friend' ? 'chat-private' : 'chat-group';
+            render();
+        }
+
+        function render() {
+            const screens = {
+                login: renderLoginScreen(),
+                register: renderRegisterScreen(),
+                main: renderMainScreen(),
+                profile: renderProfileScreen(),
+                'chat-private': renderChatPrivateScreen(),
+                'chat-group': renderChatGroupScreen()
+            };
+
+            document.getElementById('app').innerHTML = screens[currentScreen];
+        }
+
+        // Renderizar tela inicial
+        render();
+    </script>
+</body>
+</html>
