@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:15 #versão estável
+    container_name: chatDB
+    restart: always
+    ports:
+      - '5433:5432' #porta padrão do PostgreSQL
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: iceachat
+    volumes:
+      - iceachat_data:/var/lib/postgresql/data #garante que dados não serão perdidos
+    
+volumes:
+  iceachat_data:
