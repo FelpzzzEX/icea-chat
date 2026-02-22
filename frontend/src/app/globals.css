@@ -1,0 +1,150 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { max-width: 100vw; overflow-x: hidden; }
+
+/* ── Camadas de profundidade ──────────────────────────────────────────
+   Claro:   page=#DDDDE0  sidebar=#EBEBED  surface=#FFFFFF  input=#FFFFFF  messages=#E3E3E6
+   Escuro:  page=#0A0A0B  sidebar=#111114  surface=#1E1E22  input=#2A2A2F  messages=#0E0E11
+   ─────────────────────────────────────────────────────────────────── */
+:root {
+  --c-page:      #DDDDE0;
+  --c-sidebar:   #EBEBED;
+  --c-surface:   #FFFFFF;
+  --c-input:     #FFFFFF;
+  --c-messages:  #E3E3E6;
+  --c-border:    #C8C8CC;
+  --c-hover:     #E0E0E3;
+  --c-active:    #D4D4D8;
+  --c-txt-1:     #09090B;
+  --c-txt-2:     #52525B;
+  --c-txt-3:     #A1A1AA;
+}
+
+.dark {
+  --c-page:      #0A0A0B;
+  --c-sidebar:   #111114;
+  --c-surface:   #1E1E22;
+  --c-input:     #2A2A2F;
+  --c-messages:  #0E0E11;
+  --c-border:    #2E2E35;
+  --c-hover:     #1A1A1F;
+  --c-active:    #252529;
+  --c-txt-1:     #F0F0F2;
+  --c-txt-2:     #9494A0;
+  --c-txt-3:     #5A5A66;
+}
+
+body {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  background-color: var(--c-page);
+  color: var(--c-txt-1);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 99px; }
+
+/* ── Inputs nativos ── */
+input, textarea, select {
+  color: var(--c-txt-1);
+  background-color: var(--c-input);
+  font-family: inherit;
+}
+input::placeholder, textarea::placeholder { color: var(--c-txt-3); }
+a { color: inherit; text-decoration: none; }
+
+@layer components {
+
+  /* ── Card ── */
+  .card {
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.06);
+  }
+
+  /* ── Input ── */
+  .input-base {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--c-input);
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: var(--c-txt-1);
+    transition: border-color 0.15s, box-shadow 0.15s;
+    outline: none;
+  }
+  .input-base:focus {
+    border-color: #C41230;
+    box-shadow: 0 0 0 3px rgb(196 18 48 / 0.14);
+  }
+  .input-base::placeholder { color: var(--c-txt-3); }
+
+  /* ── Primary button ── */
+  .btn-primary {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 6px; padding: 10px 18px;
+    background: #C41230; color: #fff;
+    font-size: 0.875rem; font-weight: 600;
+    border-radius: 8px; border: none; cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    user-select: none;
+  }
+  .btn-primary:hover:not(:disabled)  { background: #A50E26; }
+  .btn-primary:active:not(:disabled) { transform: scale(0.98); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Secondary button ── */
+  .btn-secondary {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 6px; padding: 10px 18px;
+    background: var(--c-surface); color: var(--c-txt-2);
+    font-size: 0.875rem; font-weight: 600;
+    border-radius: 8px; border: 1px solid var(--c-border); cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    user-select: none;
+  }
+  .btn-secondary:hover:not(:disabled) { background: var(--c-hover); }
+  .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Ghost button ── */
+  .btn-ghost {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 6px; padding: 8px 12px;
+    background: transparent; color: var(--c-txt-2);
+    font-size: 0.875rem; font-weight: 500;
+    border-radius: 8px; border: none; cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    user-select: none;
+  }
+  .btn-ghost:hover { background: var(--c-hover); color: var(--c-txt-1); }
+
+  /* ── Danger button ── */
+  .btn-danger {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 6px; padding: 10px 18px;
+    background: var(--c-surface); color: #C41230;
+    font-size: 0.875rem; font-weight: 600;
+    border-radius: 8px; border: 1px solid #fecdd3; cursor: pointer;
+    transition: all 0.15s; user-select: none;
+  }
+  .btn-danger:hover { background: #fff1f2; border-color: #fda4af; }
+  .dark .btn-danger { border-color: #7f1d1d; color: #fca5a5; }
+  .dark .btn-danger:hover { background: var(--c-hover); }
+}
+
+/* ── Animações ── */
+@keyframes fadeIn  { from { opacity: 0; transform: translateY(6px);  } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideIn { from { opacity: 0; transform: translateX(8px);  } to { opacity: 1; transform: translateX(0); } }
+.animate-fadeIn  { animation: fadeIn  0.25s ease-out; }
+.animate-slideIn { animation: slideIn 0.2s ease-out; }

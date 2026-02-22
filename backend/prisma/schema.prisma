@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  username  String   @unique
+  email     String   @unique
+  password  String
+  bio       String?
+  avatar    String?
+  role      String   @default("user")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  friends  Friendship[] @relation("UserFriends")
+  friendOf Friendship[] @relation("FriendOf")
+
+  chatMemberships         ChatMember[]
+  createdChats            Chat[]        @relation("ChatCreator")
+  messages                Message[]
+  kickRequestsAsTarget    KickRequest[] @relation("KickTarget")
+  kickRequestsAsRequester KickRequest[] @relation("KickRequester")
+
+  @@map("users")
+}
+
+model Friendship {
+  userId   String @db.Uuid
+  friendId String @db.Uuid
+  user     User   @relation("UserFriends", fields: [userId],   references: [id], onDelete: Cascade)
+  friend   User   @relation("FriendOf",    fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@id([userId, friendId])
+  @@map("friendships")
+}
+
+model Chat {
+  id          String   @id @default(uuid()) @db.Uuid
+  type        String   @default("private")
+  name        String?
+  description String?
+  avatar      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  creatorId    String        @db.Uuid
+  creator      User          @relation("ChatCreator", fields: [creatorId], references: [id])
+  members      ChatMember[]
+  messages     Message[]
+  kickRequests KickRequest[]
+
+  @@map("chats")
+}
+
+model ChatMember {
+  chatId   String @db.Uuid
+  userId   String @db.Uuid
+  chatRole String @default("member") // "member" | "moderator"
+  chat     Chat   @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([chatId, userId])
+  @@map("chat_members")
+}
+
+model Message {
+  id        String   @id @default(uuid()) @db.Uuid
+  content   String
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  senderId String @db.Uuid
+  sender   User   @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  chatId   String @db.Uuid
+  chat     Chat   @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+model KickRequest {
+  id          String   @id @default(uuid()) @db.Uuid
+  chatId      String   @db.Uuid
+  targetId    String   @db.Uuid
+  requesterId String   @db.Uuid
+  createdAt   DateTime @default(now())
+
+  chat      Chat @relation(fields: [chatId],      references: [id], onDelete: Cascade)
+  target    User @relation("KickTarget",    fields: [targetId],    references: [id], onDelete: Cascade)
+  requester User @relation("KickRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, targetId])
+  @@map("kick_requests")
+}
