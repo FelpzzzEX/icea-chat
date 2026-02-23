@@ -49,9 +49,6 @@ O **ICEA Chat** é uma aplicação de mensagens em tempo real desenvolvida como 
 - Mensagens deletadas exibem marcação "Mensagem deletada"
 - Timestamps em todas as mensagens
 
-### Gerenciamento de Conversas
-- Transferência automática de administrador ao excluir conta (prioriza moderador; caso contrário, membro aleatório)
-
 ### Interface
 - Tema claro e escuro
 
