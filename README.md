@@ -131,12 +131,7 @@ cd frontend
 # 2. Instalar dependências
 npm install
 
-# 3. Criar o arquivo de variáveis de ambiente
-cp .env.example .env.local
-# Edite o .env.local e defina:
-#   NEXT_PUBLIC_API_URL=http://localhost:3001
-
-# 4. Iniciar o servidor em modo desenvolvimento
+# 3. Iniciar o servidor em modo desenvolvimento
 npm run dev
 ```
 
