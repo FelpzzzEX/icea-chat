@@ -121,10 +121,7 @@ nano .env
 # 4. Aplicar o schema ao banco de dados
 npx prisma db push
 
-# 5. Gerar o Prisma Client
-npx prisma generate
-
-# 6. Iniciar o servidor em modo desenvolvimento
+# 5. Iniciar o servidor em modo desenvolvimento
 npm run start:dev
 ```
 
