@@ -87,12 +87,12 @@ O **ICEA Chat** é uma aplicação de mensagens em tempo real desenvolvida como 
 
 ### Configuração do banco de dados
 
-Crie um banco de dados PostgreSQL e anote a connection string no formato:
+Ao clonar o repositório, entre na pasta raiz do projeto e suba o docker-compose.yml contendo o banco de dados utilizado:
 
 ```bash
-postgresql://USUARIO:SENHA@localhost:5432/NOME_DO_BANCO
+cd icea-chat
 
-# Use '5433' caso a porta '5432' já esteja sendo utilizada
+docker compose up -d
 ```
 
 ### Backend
@@ -105,10 +105,18 @@ cd backend
 npm install
 
 # 3. Criar o arquivo de variáveis de ambiente
-cp .env.example .env
+nano .env
 # Edite o .env e defina:
-#   DATABASE_URL="postgresql://usuario:senha@localhost:5432/icea_chat"
-#   JWT_SECRET="sua_chave_secreta"
+
+  # Prisma
+  DATABASE_URL="postgresql://postgres:postgres@localhost:5433/icea_chat"
+
+  # JWT
+  JWT_SECRET="icea_chat_super_secret_jwt_key_2025"
+  JWT_EXPIRATION="7d"
+
+  # Server
+  PORT=3001
 
 # 4. Aplicar o schema ao banco de dados
 npx prisma db push
